@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Log In</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #f0f0f0, #d9eaf7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .container {
+            background: #fff;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1), 0 4px 8px rgba(0, 0, 0, 0.08);
+            width: 300px;
+            text-align: center;
+            transform: translateZ(0);
+            transition: transform 0.3s ease;
+        }
+
+        .container:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 18px 36px rgba(0, 0, 0, 0.15), 0 6px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        h2 {
+            margin-bottom: 30px;
+            font-size: 24px;
+            color: #333;
+            letter-spacing: 1px;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+        }
+
+        form div {
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        label {
+            font-size: 14px;
+            color: #555;
+            margin-bottom: 8px;
+            display: inline-block;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ccc;
+            border-radius: 6px;
+            background: #f9f9f9;
+            box-sizing: border-box;
+            font-size: 16px;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        input:focus {
+            border-color: #3e8e41;
+            box-shadow: 0 0 10px rgba(62, 142, 65, 0.5);
+        }
+
+        button {
+            padding: 14px;
+            border: none;
+            background: #3e8e41;
+            color: white;
+            border-radius: 6px;
+            font-size: 18px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        button:hover {
+            background: #2e6b32;
+        }
+
+        p {
+            margin-top: 20px;
+            font-size: 14px;
+            color: #555;
+        }
+
+        a {
+            color: #3e8e41;
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+    </style>
+    <script type="module">
+        // Import Firebase modules
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.1.3/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/9.1.3/firebase-auth.js";
+
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyAqtpyWKoA4uoKfeErgMJptiU_u_Gp5myU",
+            authDomain: "kumar-ff327.firebaseapp.com",
+            projectId: "kumar-ff327",
+            storageBucket: "kumar-ff327.appspot.com",
+            messagingSenderId: "521119129836",
+            appId: "1:521119129836:web:fa175aec28617c916f05c9",
+            measurementId: "G-JQ6DB2WGYR"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const loginForm = document.getElementById('login-form');
+            const emailField = document.getElementById('email');
+            const passwordField = document.getElementById('password');
+
+            // Log In Function
+            loginForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+
+                // Get user info
+                const email = emailField.value;
+                const password = passwordField.value;
+
+                // Sign in the user
+                signInWithEmailAndPassword(auth, email, password)
+                    .then((userCredential) => {
+                        // Logged in successfully
+                        alert('User logged in successfully!');
+                        console.log(userCredential);
+                        window.location.href = 'po.html'; // Redirect to dashboard or tasks page
+                    })
+                    .catch((error) => {
+                        console.error('Error logging in:', error);
+                        alert(error.message);
+                    });
+            });
+        });
+    </script>
+</head>
+<body>
+    <div class="container">
+        <h2>Log In</h2>
+        <form id="login-form">
+            <div>
+                <label for="email">Email:</label>
+                <input type="email" id="email" placeholder="Enter your email" required autocomplete="email">
+            </div>
+            <div>
+                <label for="password">Password:</label>
+                <input type="password" id="password" placeholder="Enter your password" required autocomplete="current-password">
+            </div>
+            <button type="submit">Log In</button>
+        </form>
+        <p>Don't have an account? <a href="signup.html">Sign up here</a></p>
+    </div>
+</body>
+</html>

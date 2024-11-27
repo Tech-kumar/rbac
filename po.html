@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+    <style>
+        /* General layout and styling */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+        }
+
+        .sidebar {
+            background-color: #333;
+            color: white;
+            width: 250px;
+            padding: 20px;
+            height: 100vh;
+        }
+
+        .sidebar ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .sidebar ul li {
+            padding: 10px 0;
+        }
+
+        .sidebar ul li a {
+            color: white;
+            text-decoration: none;
+            display: block;
+        }
+
+        .main-content {
+            flex-grow: 1;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            cursor: pointer;
+            margin: 5px 0;
+        }
+
+        .btn:hover {
+            background-color: #0056b3;
+        }
+
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        .table th, .table td {
+            padding: 10px;
+            border: 1px solid #ddd;
+            text-align: left;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: white;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 300px;
+            z-index: 10;
+        }
+
+        .modal.active {
+            display: block;
+        }
+
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 5;
+        }
+
+        .overlay.active {
+            display: block;
+        }
+
+        .pie-chart-container {
+            margin-top: 20px;
+            width: 100%;
+        }
+
+        /* Ensure charts fill up the space */
+        .charts {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+        }
+
+        .chart {
+            width: 48%;
+            height: 300px;
+            margin-top: 20px;
+        }
+
+    </style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<div class="sidebar">
+    <ul>
+        <li><a href="#" id="active-users-btn">Active Users</a></li>
+        <li><a href="#" id="inactive-users-btn">Inactive Users</a></li>
+        <li><a href="#" id="roles-btn">Roles</a></li>
+        <li><a href="#" id="logout-btn">Logout</a></li>
+    </ul>
+</div>
+
+<!-- Main Content -->
+<div class="main-content">
+    <h2>Users Management</h2>
+
+    <!-- Active Users View -->
+    <div id="active-users-view">
+        <button class="btn" id="new-user-btn">Add New User</button>
+        <table class="table" id="active-users-table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Role</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="active-users-body"></tbody>
+        </table>
+    </div>
+
+    <!-- Inactive Users View -->
+    <div id="inactive-users-view" style="display: none;">
+        <button class="btn" id="new-user-btn-inactive">Add New User</button>
+        <table class="table" id="inactive-users-table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Role</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="inactive-users-body"></tbody>
+        </table>
+    </div>
+
+    <!-- Roles View -->
+    <div id="roles-view" style="display: none;">
+        <div class="charts">
+            <div class="chart">
+                <canvas id="user-role-chart"></canvas>
+            </div>
+            <div class="chart">
+                <canvas id="user-signups-pie-chart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for Adding Users -->
+    <div class="modal" id="user-modal">
+        <h3 id="modal-title">Add New User</h3>
+        <input type="text" id="user-name" placeholder="User Name">
+        <select id="user-role">
+            <option value="User">User</option>
+            <option value="Admin">Admin</option>
+        </select>
+        <select id="user-status">
+            <option value="Active">Active</option>
+            <option value="Inactive">Inactive</option>
+        </select>
+        <button class="btn" id="save-user-btn">Save User</button>
+        <button class="btn" id="close-modal-btn">Close</button>
+    </div>
+
+    <!-- Overlay -->
+    <div class="overlay" id="overlay"></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Data for users and charts
+    let users = [
+        { id: 1, name: 'John Doe', role: 'User', status: 'Active' },
+        { id: 2, name: 'Jane Smith', role: 'Admin', status: 'Inactive' },
+        { id: 3, name: 'Robert Brown', role: 'User', status: 'Active' },
+        { id: 4, name: 'Emily Davis', role: 'Admin', status: 'Inactive' }
+    ];
+
+    // Chart.js Data
+    const roleCounts = {
+        User: users.filter(user => user.role === 'User').length,
+        Admin: users.filter(user => user.role === 'Admin').length
+    };
+
+    const signupCounts = {
+        today: 10,
+        week: 50,
+        month: 200
+    };
+
+    // Get DOM Elements
+    const activeUsersBtn = document.getElementById("active-users-btn");
+    const inactiveUsersBtn = document.getElementById("inactive-users-btn");
+    const rolesBtn = document.getElementById("roles-btn");
+    const logoutBtn = document.getElementById("logout-btn");
+    const newUserBtn = document.getElementById("new-user-btn");
+    const newUserBtnInactive = document.getElementById("new-user-btn-inactive");
+    const userModal = document.getElementById("user-modal");
+    const closeModalBtn = document.getElementById("close-modal-btn");
+    const overlay = document.getElementById("overlay");
+    const saveUserBtn = document.getElementById("save-user-btn");
+    const userNameInput = document.getElementById("user-name");
+    const userRoleInput = document.getElementById("user-role");
+    const userStatusInput = document.getElementById("user-status");
+    const activeUsersTable = document.getElementById("active-users-body");
+    const inactiveUsersTable = document.getElementById("inactive-users-body");
+
+    // Show Active Users View
+    const showActiveUsersView = () => {
+        document.getElementById("active-users-view").style.display = 'block';
+        document.getElementById("inactive-users-view").style.display = 'none';
+        document.getElementById("roles-view").style.display = 'none';
+        renderUsers('Active');
+    };
+
+    // Show Inactive Users View
+    const showInactiveUsersView = () => {
+        document.getElementById("active-users-view").style.display = 'none';
+        document.getElementById("inactive-users-view").style.display = 'block';
+        document.getElementById("roles-view").style.display = 'none';
+        renderUsers('Inactive');
+    };
+
+    // Show Roles View
+    const showRolesView = () => {
+        document.getElementById("active-users-view").style.display = 'none';
+        document.getElementById("inactive-users-view").style.display = 'none';
+        document.getElementById("roles-view").style.display = 'block';
+        renderRolesChart();
+    };
+
+    // Logout (Simulate)
+    const logout = () => {
+        alert('Logging out...');
+        // Add real logout logic here
+    };
+
+    // Render Users Based on Status
+    const renderUsers = (status) => {
+        const tableBody = status === 'Active' ? activeUsersTable : inactiveUsersTable;
+        const filteredUsers = users.filter(user => user.status === status);
+
+        tableBody.innerHTML = filteredUsers.map(user => `
+            <tr>
+                <td>${user.name}</td>
+                <td>${user.role}</td>
+                <td>${user.status}</td>
+                <td>
+                    <button class="btn" onclick="editUser(${user.id})">Edit</button>
+                    <button class="btn" onclick="deleteUser(${user.id})">Delete</button>
+                </td>
+            </tr>
+        `).join('');
+    };
+
+    // Edit User (Placeholder)
+    const editUser = (id) => {
+        alert('Edit user functionality goes here.');
+    };
+
+    // Delete User (Placeholder)
+    const deleteUser = (id) => {
+        alert('Delete user functionality goes here.');
+    };
+
+    // Open Modal to Add User
+    const openModal = () => {
+        userModal.classList.add('active');
+        overlay.classList.add('active');
+    };
+
+    // Close Modal
+    const closeModal = () => {
+        userModal.classList.remove('active');
+        overlay.classList.remove('active');
+        userNameInput.value = '';
+        userRoleInput.value = 'User';
+        userStatusInput.value = 'Active';
+    };
+
+    // Save New User (Placeholder)
+    const saveUser = () => {
+        const newUser = {
+            id: users.length + 1,
+            name: userNameInput.value,
+            role: userRoleInput.value,
+            status: userStatusInput.value
+        };
+        users.push(newUser);
+        closeModal();
+        renderUsers('Active');
+        renderUsers('Inactive');
+    };
+
+    // Render the User Role Distribution Chart
+    const renderRolesChart = () => {
+        const ctx = document.getElementById('user-role-chart').getContext('2d');
+        const roleChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: ['User', 'Admin'],
+                datasets: [{
+                    label: 'User Roles',
+                    data: [roleCounts.User, roleCounts.Admin],
+                    backgroundColor: ['#007BFF', '#28a745'],
+                }]
+            }
+        });
+
+        const ctx2 = document.getElementById('user-signups-pie-chart').getContext('2d');
+        const signupPieChart = new Chart(ctx2, {
+            type: 'pie',
+            data: {
+                labels: ['Today', 'This Week', 'This Month'],
+                datasets: [{
+                    data: [signupCounts.today, signupCounts.week, signupCounts.month],
+                    backgroundColor: ['#007BFF', '#28a745', '#ffc107']
+                }]
+            }
+        });
+    };
+
+    // Event Listeners
+    activeUsersBtn.addEventListener('click', showActiveUsersView);
+    inactiveUsersBtn.addEventListener('click', showInactiveUsersView);
+    rolesBtn.addEventListener('click', showRolesView);
+    logoutBtn.addEventListener('click', logout);
+    newUserBtn.addEventListener('click', openModal);
+    newUserBtnInactive.addEventListener('click', openModal);
+    closeModalBtn.addEventListener('click', closeModal);
+    saveUserBtn.addEventListener('click', saveUser);
+
+    // Initial Render
+    showActiveUsersView();
+
+</script>
+
+</body>
+</html>
